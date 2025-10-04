@@ -1,0 +1,97 @@
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
+
+HISTORY_FILE = "history.txt"
+
+# --- File Handling Functions ---
+def show_history():
+    try:
+        with open(HISTORY_FILE, "r") as file:
+            return file.read()
+    except FileNotFoundError:
+        return "No History Found"
+
+def clear_history():
+    open(HISTORY_FILE, "w").close()
+
+def save_to_history(equation, result):
+    with open(HISTORY_FILE, "a") as file:
+        file.write(f"{equation} = {result}\n")
+
+# --- Calculator Logic ---
+def calculate():
+    expression = entry.get()
+    if not expression:
+        return
+
+    try:
+        result = eval(expression)
+        if result == int(result):
+            result = int(result)
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, str(result))
+        save_to_history(expression, result)
+        update_history()
+    except ZeroDivisionError:
+        messagebox.showerror("Error", "Division by zero is not allowed.")
+    except Exception:
+        messagebox.showerror("Error", "Invalid expression.")
+
+# --- UI Functions ---
+def update_history():
+    history_box.delete(1.0, tk.END)
+    history_box.insert(tk.END, show_history())
+
+def clear_all_history():
+    clear_history()
+    update_history()
+    messagebox.showinfo("History", "History cleared successfully.")
+
+def button_click(value):
+    current = entry.get()
+    entry.delete(0, tk.END)
+    entry.insert(tk.END, current + value)
+
+def clear_entry():
+    entry.delete(0, tk.END)
+
+# --- GUI Setup ---
+root = tk.Tk()
+root.title("Simple Calculator with History")
+root.geometry("400x500")
+root.resizable(False, False)
+
+entry = tk.Entry(root, font=("Arial", 20), borderwidth=3, relief="solid", justify="right")
+entry.pack(pady=10, padx=10, fill="x")
+
+# Button layout
+buttons = [
+    ("7", "8", "9", "/"),
+    ("4", "5", "6", "*"),
+    ("1", "2", "3", "-"),
+    ("0", ".", "C", "+")
+]
+
+for row_values in buttons:
+    frame = tk.Frame(root)
+    frame.pack(pady=2)
+    for value in row_values:
+        if value == "C":
+            btn = tk.Button(frame, text=value, width=8, height=2, font=("Arial", 14), command=clear_entry)
+        else:
+            btn = tk.Button(frame, text=value, width=8, height=2, font=("Arial", 14), command=lambda v=value: button_click(v))
+        btn.pack(side="left", padx=2)
+
+equal_btn = tk.Button(root, text="=", width=34, height=2, font=("Arial", 14), command=calculate)
+equal_btn.pack(pady=5)
+
+# History area
+tk.Label(root, text="History", font=("Arial", 14, "bold")).pack()
+history_box = scrolledtext.ScrolledText(root, height=8, font=("Arial", 12))
+history_box.pack(padx=10, pady=5, fill="both")
+update_history()
+
+clear_history_btn = tk.Button(root, text="Clear History", font=("Arial", 12), command=clear_all_history)
+clear_history_btn.pack(pady=5)
+
+root.mainloop()
